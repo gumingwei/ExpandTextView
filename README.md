@@ -1,2 +1,2 @@
 # ExpandTextView
-![Image text](https://github.com/Mingwei360/FloatLayout/blob/master/res/drawable-hdpi/preview.gif)
+![Image text](https://github.com/gumingwei/ExpandTextView/tree/master/app/1.gif)
