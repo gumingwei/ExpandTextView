@@ -36,6 +36,8 @@ public class ExpandTextView extends RelativeLayout {
 
     private Animation mExpandAnimation;
 
+    private boolean mAnimaLock;
+
     private int mStartH;
 
     private int mEndH;
@@ -47,6 +49,25 @@ public class ExpandTextView extends RelativeLayout {
     private final static int DEFAULT_COLOR = Color.GRAY;
 
     private final static int DEFAULT_DURATION = 500;
+
+    public OnExpandListener mListener;
+
+    public OnExpandStateListener mStateListener;
+
+    public interface OnExpandListener {
+        void onExpand(float progess);
+    }
+
+    public interface OnExpandStateListener {
+
+        void onExpandStart();
+
+        void onExpandEnd();
+
+        void onShrinkStart();
+
+        void onShrinkEnd();
+    }
 
     public ExpandTextView(Context context) {
         this(context, null);
@@ -145,8 +166,8 @@ public class ExpandTextView extends RelativeLayout {
     }
 
     public void expand() {
-        if (!isExpand) {
-            isExpand = true;
+        if (!isExpand && !mAnimaLock) {
+            mAnimaLock = true;
             showExpandText();
             mExpandAnimation = new Animation() {
                 @Override
@@ -154,8 +175,33 @@ public class ExpandTextView extends RelativeLayout {
                     ViewGroup.LayoutParams params = ExpandTextView.this.getLayoutParams();
                     params.height = mStartH + (int) ((mEndH - mStartH) * interpolatedTime);
                     setLayoutParams(params);
+                    if (mListener != null) {
+                        mListener.onExpand(interpolatedTime);
+                    }
                 }
             };
+            mExpandAnimation.setAnimationListener(new Animation.AnimationListener() {
+                @Override
+                public void onAnimationStart(Animation animation) {
+                    if (mStateListener != null) {
+                        mStateListener.onExpandStart();
+                    }
+                }
+
+                @Override
+                public void onAnimationEnd(Animation animation) {
+                    isExpand = true;
+                    mAnimaLock = false;
+                    if (mStateListener != null) {
+                        mStateListener.onExpandEnd();
+                    }
+                }
+
+                @Override
+                public void onAnimationRepeat(Animation animation) {
+
+                }
+            });
             mExpandAnimation.setDuration(mDuration);
             startAnimation(mExpandAnimation);
         }
@@ -163,25 +209,35 @@ public class ExpandTextView extends RelativeLayout {
     }
 
     public void shrink() {
-        if (isExpand) {
-            isExpand = false;
+        if (isExpand && !mAnimaLock) {
+            mAnimaLock = true;
             mExpandAnimation = new Animation() {
                 @Override
                 protected void applyTransformation(float interpolatedTime, Transformation t) {
                     ViewGroup.LayoutParams params = ExpandTextView.this.getLayoutParams();
                     params.height = mStartH + (int) ((mEndH - mStartH) * (1 - interpolatedTime));
                     setLayoutParams(params);
+                    if (mListener != null) {
+                        mListener.onExpand(1 - interpolatedTime);
+                    }
                 }
             };
             mExpandAnimation.setAnimationListener(new Animation.AnimationListener() {
                 @Override
                 public void onAnimationStart(Animation animation) {
-
+                    if (mStateListener != null) {
+                        mStateListener.onShrinkStart();
+                    }
                 }
 
                 @Override
                 public void onAnimationEnd(Animation animation) {
+                    isExpand = false;
+                    mAnimaLock = false;
                     showText();
+                    if (mStateListener != null) {
+                        mStateListener.onShrinkEnd();
+                    }
                 }
 
                 @Override
@@ -206,6 +262,14 @@ public class ExpandTextView extends RelativeLayout {
 
     public boolean isExpandable() {
         return mExpandText.getLineCount() > mVisiableLines;
+    }
+
+    public void setOnExpandListener(OnExpandListener listener) {
+        mListener = listener;
+    }
+
+    public void setOnExpandStateListener(OnExpandStateListener listener) {
+        mStateListener = listener;
     }
 
     public void switchs() {

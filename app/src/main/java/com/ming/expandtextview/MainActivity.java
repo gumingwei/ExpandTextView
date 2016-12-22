@@ -1,8 +1,8 @@
 package com.ming.expandtextview;
 
-import android.os.PersistableBundle;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
@@ -46,6 +46,36 @@ public class MainActivity extends AppCompatActivity {
                     mBtnStrink.setVisibility(View.GONE);
                 }
             }
+        });
+
+        mExpandTextview.setOnExpandListener(new ExpandTextView.OnExpandListener() {
+            @Override
+            public void onExpand(float progess) {
+                Log.i("Gmw", "progess=" + progess);
+            }
+        });
+
+        mExpandTextview.setOnExpandStateListener(new ExpandTextView.OnExpandStateListener() {
+            @Override
+            public void onExpandStart() {
+                Log.i("Gmw", "onExpandStart");
+            }
+
+            @Override
+            public void onExpandEnd() {
+                Log.i("Gmw", "onExpandEnd");
+            }
+
+            @Override
+            public void onShrinkStart() {
+                Log.i("Gmw", "onShrinkStart");
+            }
+
+            @Override
+            public void onShrinkEnd() {
+                Log.i("Gmw", "onShrinkEnd");
+            }
+
         });
 
     }
