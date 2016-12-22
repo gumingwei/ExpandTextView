@@ -8,4 +8,8 @@
         <item name="colorAccent">@color/colorAccent</item>
     </style>
 
+    <declare-styleable name="ExpandText">
+        <attr name="visiable_lines" format="integer" />
+        <attr name="text_color" format="color" />
+    </declare-styleable>
 </resources>

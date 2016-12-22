@@ -9,7 +9,6 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="com.ming.expandtextview.MainActivity">
 
-
     <Button
         android:id="@+id/expand"
         android:layout_width="wrap_content"
@@ -17,7 +16,8 @@
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
         android:layout_alignParentTop="true"
-        android:text="Expand" />
+        android:text="Expand"
+        android:textAllCaps="false" />
 
     <Button
         android:id="@+id/strink"
@@ -26,12 +26,15 @@
         android:layout_alignParentTop="true"
         android:layout_toEndOf="@+id/expand"
         android:layout_toRightOf="@+id/expand"
-        android:text="Strink" />
+        android:text="Strink"
+        android:textAllCaps="false" />
 
-    <com.ming.expandtextview.ExpandTextView
+    <com.ming.expandtextview.ExpandTextView xmlns:expand="http://schemas.android.com/apk/res-auto"
         android:id="@+id/expandtextview"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/expand">
-    </com.ming.expandtextview.ExpandTextView>
+        android:layout_below="@+id/expand"
+        expand:text_color="@color/colorAccent"
+        expand:visiable_lines="2" />
+
 </RelativeLayout>

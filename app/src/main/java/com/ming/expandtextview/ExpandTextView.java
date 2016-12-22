@@ -1,9 +1,11 @@
 package com.ming.expandtextview;
 
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.graphics.Color;
 import android.text.TextUtils;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.Transformation;
@@ -16,21 +18,35 @@ import android.widget.TextView;
  */
 public class ExpandTextView extends RelativeLayout {
 
+    /**
+     * 收缩后
+     */
     private TextView mText;
 
+    /**
+     * 展开后
+     */
     private TextView mExpandText;
 
-    private int mTextColor = Color.GRAY;
+    private int mTextColor = DEFAULT_COLOR;
 
-    private int mTextLine = 1;
+    private int mVisiableLines = DEFAULT_LINES;
 
-    private int mStart;
+    private int mDuration = DEFAULT_DURATION;
 
-    private int mEnd;
+    private Animation mExpandAnimation;
 
-    private boolean isFirst = true;
+    private int mStartH;
+
+    private int mEndH;
 
     private boolean isExpand = false;
+
+    private final static int DEFAULT_LINES = 1;
+
+    private final static int DEFAULT_COLOR = Color.GRAY;
+
+    private final static int DEFAULT_DURATION = 500;
 
     public ExpandTextView(Context context) {
         this(context, null);
@@ -40,39 +56,26 @@ public class ExpandTextView extends RelativeLayout {
         this(context, attrs, 0);
     }
 
-    @Override
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-        final ViewGroup.LayoutParams params = getLayoutParams();
-        if (isFirst) {
-            isFirst = false;
-            mText.post(new Runnable() {
-                @Override
-                public void run() {
-                    mStart = mText.getLineHeight() * mText.getLineCount();
-                    params.height = mStart;
-                    setLayoutParams(params);
-                }
-            });
-            mExpandText.post(new Runnable() {
-                @Override
-                public void run() {
-                    mEnd = mExpandText.getLineHeight() * mExpandText.getLineCount();
-                }
-            });
-
-        }
-
-    }
-
     public ExpandTextView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
+        initAttr(context, attrs);
+        initView(context);
+    }
+
+    private void initAttr(Context context, AttributeSet attrs) {
+        TypedArray array = context.obtainStyledAttributes(attrs, R.styleable.ExpandText);
+        mVisiableLines = array.getInteger(R.styleable.ExpandText_visiable_lines, 1);
+        mTextColor = array.getColor(R.styleable.ExpandText_text_color, Color.GRAY);
+        array.recycle();
+    }
+
+    private void initView(Context context) {
         FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT,
                 LayoutParams.WRAP_CONTENT);
-        mText = new TextView(context, attrs);
+        mText = new TextView(context);
         mText.setTextColor(mTextColor);
         mText.setEllipsize(TextUtils.TruncateAt.END);
-        mText.setMaxLines(mTextLine);
+        mText.setMaxLines(mVisiableLines);
         addView(mText, params);
         mExpandText = new TextView(context);
         mExpandText.setTextColor(Color.TRANSPARENT);
@@ -80,9 +83,18 @@ public class ExpandTextView extends RelativeLayout {
     }
 
     public void setText(String text) {
-        isFirst = true;
         mText.setText(text);
         mExpandText.setText(text);
+        this.post(new Runnable() {
+            @Override
+            public void run() {
+                ViewGroup.LayoutParams params = getLayoutParams();
+                mStartH = mText.getLineHeight() * mText.getLineCount();
+                mEndH = mExpandText.getLineHeight() * mExpandText.getLineCount();
+                params.height = mStartH;
+                setLayoutParams(params);
+            }
+        });
         requestLayout();
     }
 
@@ -92,15 +104,14 @@ public class ExpandTextView extends RelativeLayout {
     }
 
     public void setTextSize(int size) {
-        isFirst = true;
         mText.setTextSize(size);
         mExpandText.setTextSize(size);
         requestLayout();
     }
 
-    public void setTextMaxLine(int num) {
-        mTextLine = num;
-        mText.setMaxLines(num);
+    public void setVisiableLines(int lines) {
+        mVisiableLines = lines;
+        mText.setMaxLines(mVisiableLines);
     }
 
     public void setGravity(int gravity) {
@@ -125,8 +136,8 @@ public class ExpandTextView extends RelativeLayout {
         return mExpandText;
     }
 
-    public int line() {
-        return mTextLine;
+    public int getVisiableLines() {
+        return mVisiableLines;
     }
 
     public boolean isExpand() {
@@ -136,39 +147,33 @@ public class ExpandTextView extends RelativeLayout {
     public void expand() {
         if (!isExpand) {
             isExpand = true;
-            mText.setTextColor(Color.TRANSPARENT);
-            mExpandText.setTextColor(mTextColor);
-            Animation animation = new Animation() {
+            showExpandText();
+            mExpandAnimation = new Animation() {
                 @Override
                 protected void applyTransformation(float interpolatedTime, Transformation t) {
                     ViewGroup.LayoutParams params = ExpandTextView.this.getLayoutParams();
-                    params.height = mStart + (int) ((mEnd - mStart) * interpolatedTime);
+                    params.height = mStartH + (int) ((mEndH - mStartH) * interpolatedTime);
                     setLayoutParams(params);
                 }
             };
-            animation.setDuration(500);
-            startAnimation(animation);
+            mExpandAnimation.setDuration(mDuration);
+            startAnimation(mExpandAnimation);
         }
 
-    }
-
-    @Override
-    public void setLayoutParams(ViewGroup.LayoutParams params) {
-        super.setLayoutParams(params);
     }
 
     public void shrink() {
         if (isExpand) {
             isExpand = false;
-            Animation animation = new Animation() {
+            mExpandAnimation = new Animation() {
                 @Override
                 protected void applyTransformation(float interpolatedTime, Transformation t) {
                     ViewGroup.LayoutParams params = ExpandTextView.this.getLayoutParams();
-                    params.height = mStart + (int) ((mEnd - mStart) * (1 - interpolatedTime));
+                    params.height = mStartH + (int) ((mEndH - mStartH) * (1 - interpolatedTime));
                     setLayoutParams(params);
                 }
             };
-            animation.setAnimationListener(new Animation.AnimationListener() {
+            mExpandAnimation.setAnimationListener(new Animation.AnimationListener() {
                 @Override
                 public void onAnimationStart(Animation animation) {
 
@@ -176,8 +181,7 @@ public class ExpandTextView extends RelativeLayout {
 
                 @Override
                 public void onAnimationEnd(Animation animation) {
-                    mText.setTextColor(mTextColor);
-                    mExpandText.setTextColor(Color.TRANSPARENT);
+                    showText();
                 }
 
                 @Override
@@ -185,9 +189,23 @@ public class ExpandTextView extends RelativeLayout {
 
                 }
             });
-            animation.setDuration(500);
-            startAnimation(animation);
+            mExpandAnimation.setDuration(mDuration);
+            startAnimation(mExpandAnimation);
         }
+    }
+
+    public void showText() {
+        mText.setTextColor(mTextColor);
+        mExpandText.setTextColor(Color.TRANSPARENT);
+    }
+
+    public void showExpandText() {
+        mText.setTextColor(Color.TRANSPARENT);
+        mExpandText.setTextColor(mTextColor);
+    }
+
+    public boolean isExpandable() {
+        return mExpandText.getLineCount() > mVisiableLines;
     }
 
     public void switchs() {
@@ -197,6 +215,4 @@ public class ExpandTextView extends RelativeLayout {
             expand();
         }
     }
-
-
 }
